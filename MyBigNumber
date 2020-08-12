@@ -1,0 +1,188 @@
+interface BigNumber extends Comparable {
+	BigNumber add(BigNumber bigNumber);
+
+	BigNumber sub(BigNumber bigNumber);
+}
+
+class MyBigNumber implements BigNumber {
+
+	private final String number;
+
+	public MyBigNumber(String number) {
+			this.number = number;
+	}
+
+	@Override
+	public BigNumber add(BigNumber bigNumber) {
+
+		String arg1 = this.toString();
+		String arg2 = bigNumber.toString();
+		int length1 = arg1.length();
+		int length2 = arg2.length();
+		BigNumber result;
+
+		if (!arg1.startsWith("-") && arg2.startsWith("-")) {
+			result = this.sub(new MyBigNumber(arg2.substring(1, length2)));
+		}
+		else if (arg1.startsWith("-") && !arg2.startsWith("-")) {
+			result = bigNumber.sub(new MyBigNumber(arg1.substring(1, length1)));
+		}
+		else {
+			String longer;	
+			int shorterSize = 0;
+			if (length1 > length2) {
+				longer = arg1;
+				shorterSize = length2;
+			}
+			else {
+				longer = arg2;
+				shorterSize = length1;
+			}
+
+			int sign = longer.startsWith("-") ? 1 : 0;
+
+			int sum = 0;
+			int flag = 0;
+			StringBuilder res = new StringBuilder();
+			for (int i = 0; i < shorterSize - sign; i++) {
+				sum = Integer.parseInt(arg1.substring(length1 - i - 1, length1 - i)) +
+						Integer.parseInt(arg2.substring(length2 - i - 1, length2 - i)) + flag;
+				flag = sum > 9 ? 1 : 0;
+				res = res.append(sum % 10);
+			}
+			if (flag > 0) {
+				for (int i = longer.length() - shorterSize - 1 + sign; i >= sign; i--) {
+					sum = Integer.parseInt(longer.substring(i, i + 1)) + flag;
+					flag = sum > 9 ? 1 : 0;
+					res = res.append(sum % 10);
+				}
+				res = flag > 0 ? res.append(1) : res;
+				res = sign > 0 ? res.append('-').reverse() : res.reverse();
+			}
+			else {
+				StringBuilder remainder = new StringBuilder(longer.substring(0, longer.length() - shorterSize + sign));
+				res = remainder.append(res.reverse());
+			}
+			result = new MyBigNumber(res.toString());
+		}
+		return result;
+	}
+
+	@Override
+	public BigNumber sub(BigNumber bigNumber) {
+		String arg1 = this.toString();
+		String arg2 = bigNumber.toString();
+		int length1 = arg1.length();
+		int length2 = arg2.length();
+		BigNumber result;
+
+		if (!arg1.startsWith("-") && arg2.startsWith("-")) {
+			result = this.add(new MyBigNumber(arg2.substring(1, length2)));
+		}
+		else if (arg1.startsWith("-") && !arg2.startsWith("-")) {
+			result = this.add(new MyBigNumber("-".concat(arg2)));
+		}
+		//same signs
+		else {
+			boolean swap = false;
+			if (length1 < length2) {
+				swap = true;
+			} else if (length1 == length2) {
+				for (int i = 0; i < length1; i++) {
+					if (arg1.charAt(i) > arg2.charAt(i)) {
+						break;
+					} else if (arg1.charAt(i) < arg2.charAt(i)) {
+						swap = true;
+					}
+				}
+				if (!swap) {
+					return new MyBigNumber("0");
+				}
+			}
+			if (swap) {
+				String tmp = arg1;
+				arg1 = arg2;
+				arg2 = tmp;
+				length1 = arg1.length();
+				length2 = arg2.length();
+			}
+
+			//now arg1 > arg2
+			int sign = arg1.startsWith("-") ? 1 : 0;
+			int diff = 0;
+			int flag = 0;
+			StringBuilder res = new StringBuilder();
+			for (int i = 0; i < length2 - sign; i++) {
+				diff = Integer.parseInt(arg1.substring(length1 - i - 1, length1 - i)) -
+						Integer.parseInt(arg2.substring(length2 - i - 1, length2 - i)) - flag;
+				if (diff < 0) {
+					diff = diff + 10;
+					flag = 1;
+				} else {
+					flag = 0;
+				}
+				res = res.append(diff);
+			}
+
+			StringBuilder remainder = new StringBuilder();
+			//append - among other things
+			if (flag == 0) {
+
+				if (swap && sign == 1) {
+					remainder = remainder.append(arg1.substring(sign, length1 - length2 + sign));
+				}
+				else if (swap) {
+					remainder = remainder.append("-" + arg1.substring(sign, length1 - length2 + sign));
+				}
+				else {
+					remainder = remainder.append(arg1.substring(0, length1 - length2 + sign));
+				}
+			}
+			else {
+				for (int i = length1 - length2 - 1 + sign; i > sign; i--) {
+					diff = Integer.parseInt(arg1.substring(i, i + 1)) - flag;
+					if (diff < 0) {
+						diff = diff + 10;
+						flag = 1;
+					} else {
+						flag = 0;
+					}
+					res = res.append(diff);
+				}
+				if (arg1.charAt(sign) != '1') {
+					diff = Integer.parseInt(arg1.substring(sign, sign + 1)) - flag;
+					res = res.append(diff);
+				}
+				if (swap && sign == 0 || !swap && sign > 0) {
+					res = res.append('-');
+				}
+			}
+			result = new MyBigNumber(remainder.append(res.reverse()).toString());
+		}
+		return result;
+	}
+
+	@Override
+	public int compareTo(Object o) {
+		if (o == null || this.getClass() != o.getClass()) {
+			return -1;
+		}
+		else {
+			MyBigNumber other = (MyBigNumber)o;
+			BigNumber res = this.sub(other);
+			if (res.toString().equals("0")) {
+				return 0;
+			}
+			else if (res.toString().startsWith("-")) {
+				return -1;
+			}
+			return 1;
+		}
+	}
+
+	@Override
+	public String toString() {
+		return number;
+	}
+}
+
